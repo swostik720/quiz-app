@@ -23,6 +23,8 @@ const startQuizSchema = z.object({
 });
 
 type StartQuizValues = z.infer<typeof startQuizSchema>;
+type StartQuizInput = z.input<typeof startQuizSchema>;
+type StartQuizOutput = z.output<typeof startQuizSchema>;
 
 export default function QuizPage() {
   const queryClient = useQueryClient();
@@ -33,7 +35,7 @@ export default function QuizPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<StartQuizValues>({
+  } = useForm<StartQuizInput, unknown, StartQuizOutput>({
     resolver: zodResolver(startQuizSchema),
     defaultValues: { categoryId: "", count: 10 },
   });
