@@ -19,7 +19,7 @@ import { useAppToast } from "@/components/ui/toaster";
 
 const startQuizSchema = z.object({
   categoryId: z.string().min(1, "Please select a category"),
-  count: z.coerce.number().int().min(1).max(20),
+  count: z.number().int().min(1).max(20),
 });
 
 type StartQuizValues = z.infer<typeof startQuizSchema>;

@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { z } from "zod";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +12,8 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/store/authStore";
 
 export default function VerifyEmailPage() {
-  const params = useSearchParams();
-  const tokenSchema = z.string().trim().min(1, "Missing verification token");
-  const parsedToken = tokenSchema.safeParse(params.get("token") ?? "");
-  const token = parsedToken.success ? parsedToken.data : "";
+  const [token, setToken] = useState("");
+  const [tokenChecked, setTokenChecked] = useState(false);
   const { pushToast } = useAppToast();
   const { notice, setNotice, clearNotice } = useAuthStore();
 
@@ -35,6 +31,18 @@ export default function VerifyEmailPage() {
   });
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const resolvedToken = (params.get("token") ?? "").trim();
+
+    setToken(resolvedToken);
+    setTokenChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!tokenChecked) return;
+
     if (!token && mutation.isIdle) {
       pushToast("Missing verification token", "error");
       return;
@@ -44,7 +52,7 @@ export default function VerifyEmailPage() {
       clearNotice();
       mutation.mutate({ token: token.trim() });
     }
-  }, [token, mutation, clearNotice, pushToast]);
+  }, [token, tokenChecked, mutation, clearNotice, pushToast]);
 
   return (
     <main className="container mx-auto flex min-h-[calc(100vh-2rem)] items-center justify-center p-4">
@@ -54,13 +62,13 @@ export default function VerifyEmailPage() {
           <CardDescription>Click below to complete your account verification.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!token && <p className="text-sm text-destructive">Missing verification token</p>}
+          {tokenChecked && !token && <p className="text-sm text-destructive">Missing verification token</p>}
           {notice?.type === "success" && <p className="text-sm text-green-600">{notice.text}</p>}
           {notice?.type === "error" && <p className="text-sm text-destructive">{notice.text}</p>}
 
           <Button
             className="w-full"
-            disabled={mutation.isPending || !token}
+            disabled={mutation.isPending || !tokenChecked || !token}
             onClick={() => mutation.mutate({ token })}
           >
             {mutation.isPending ? "Verifying..." : "Verify Email"}

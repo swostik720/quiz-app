@@ -1,11 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { resetPassword as resetPasswordApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -20,8 +20,15 @@ import { useAuthStore } from "@/store/authStore";
 type ResetFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPassword() {
-  const params = useSearchParams();
-  const token = params.get("token") ?? "";
+  const [token, setToken] = useState("");
+  const [tokenChecked, setTokenChecked] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setToken(params.get("token") ?? "");
+    setTokenChecked(true);
+  }, []);
 
   const schema = resetPasswordSchema.omit({ token: true });
   const {
@@ -75,11 +82,11 @@ export default function ResetPassword() {
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
-            {!token && <p className="text-sm text-destructive">Invalid or missing reset token</p>}
+            {tokenChecked && !token && <p className="text-sm text-destructive">Invalid or missing reset token</p>}
             {notice?.type === "success" && <p className="text-sm text-green-600">{notice.text}</p>}
             {notice?.type === "error" && <p className="text-sm text-destructive">{notice.text}</p>}
 
-            <Button className="w-full" type="submit" disabled={isSubmitting || resetMutation.isPending || !token}>
+            <Button className="w-full" type="submit" disabled={isSubmitting || resetMutation.isPending || !tokenChecked || !token}>
               {resetMutation.isPending ? "Updating..." : "Reset Password"}
             </Button>
 

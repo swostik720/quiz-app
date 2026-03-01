@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,15 +29,18 @@ export default function LoginPage() {
         resolver: zodResolver(loginSchema),
     });
     const router = useRouter();
-    const searchParams = useSearchParams();
     const { pushToast } = useAppToast();
     const { notice, setNotice, clearNotice } = useAuthStore();
 
     useEffect(() => {
-        if (searchParams.get("loggedOut") === "1") {
+        if (typeof window === "undefined") return;
+
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.get("loggedOut") === "1") {
             pushToast("Logout successful", "success");
         }
-    }, [searchParams, pushToast]);
+    }, [pushToast]);
 
     const loginMutation = useMutation({
         mutationFn: async (payload: LoginFormValues) => {
